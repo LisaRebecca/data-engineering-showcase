@@ -3,7 +3,7 @@ pipeline AirportsPipeline {
     AirportsExtractor
          -> AirportsTextFileInterpreter
          -> AirportsCSVInterpreter
-         -> NameHeaderWriter
+        // -> NameHeaderWriter
          -> AirportsTableInterpreter
          -> AirportsLoader;
 
@@ -16,23 +16,23 @@ pipeline AirportsPipeline {
     block AirportsCSVInterpreter oftype CSVInterpreter {
         delimiter: ";";
      }
-    block NameHeaderWriter oftype CellWriter {
-        at: range A1:A2;
-        write: ["column_1", "column_2"];
-     }
+    //block NameHeaderWriter oftype CellWriter {
+    //    at: range A1:A2;
+    //    write: ["column_1", "column_2"];
+    // }
     block AirportsTableInterpreter oftype TableInterpreter { 
         header: true;
         columns: [
-            "column_1" oftype text,
+            "column_1" oftype integer,
             "column_2" oftype text,
             "column_3" oftype text,
             "column_4" oftype text,
             "column_5" oftype text,
             "column_6" oftype text,
-            "column_7" oftype text,
-            "column_8" oftype text,
-            "column_9" oftype text,
-            "column_10" oftype text,
+            "column_7" oftype decimal,
+            "column_8" oftype decimal,
+            "column_9" oftype integer,
+            "column_10" oftype decimal,
             "column_11" oftype text,
             "column_12" oftype text,
             "geo_punkt" oftype text,
