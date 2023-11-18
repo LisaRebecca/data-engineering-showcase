@@ -19,6 +19,27 @@ Deliverables
 | License    | CC BY 4.0                                                                                                                                                                       | CC BY 4.0                                                                                                                                                                                                                                                                                                                                 | CC BY 4.0                                                                                                                                                                                                                                                                                                                                  |
 | Owner      | CISS TDI GmbH                                                                                                                                                                   | Bundesnetzagentur.de                                                                                                                                                                                                                                                                                                                      | Bundesnetzagentur.de                                                                                                                                                                                                                                                                                                                       |
 
+## Data Publishers and Owners
+
+### Mobilithek (Publisher)
+`With the Mobilithek, the Federal Ministry for Digital and Transport (BMDV) provides a platform that offers access to open mobility data and enables the B2B exchange of data offers. A central point of access to all data that gets you moving.`
+
+Source: https://mobilithek.info/ (English Version)
+
+### CISS TDI GmbH (Owner)
+`Die CISS TDI GmbH ist ein mittelständisches Geoinformationsunternehmen, das seit 1982 Unternehmen und den öffentlichen Dienst mit Geodaten versorgt. Diese werden mit eigenen Werkzeugen veredelt und über Plattformen bereitgestellt. Aufgrund der Bedeutung von Geodaten in der heutigen digitalisierten Gesellschaft, leistet das Unternehmen durch den einfachen Zugang zu qualitativ hochwertigen Geoinformationen einen wichtigen Beitrag. Das Unternehmen beschäftigt etwa 40 Mitarbeiter und bietet kurze Entscheidungswege sowie Entfaltungsmöglichkeiten für kreative Köpfe.`
+
+Source: https://www.ciss.de/ueber-uns/
+Description of Project: https://bmdv.bund.de/SharedDocs/DE/Artikel/DG/mfund-projekte/moin.html
+
+### Bundesnetzagentur (Owner, Publisher)
+`We are Germany's main authority for infrastructure, promoting competition in the markets for energy, telecommunications, post and railways to guarantee the efficiency of our country's vital networks. As a consumer protection authority, we also safeguard the interests of the people using these networks.`
+
+Source: https://www.bundesnetzagentur.de/EN/General/Bundesnetzagentur/AboutUs/start.html
+
+### Conclusion
+All three data sets were either created by a government contractor during a federal-funded research project (data source 1) or directly published by a government authority (data sources 2+3). This allows to rate the data as highly-trustworthy and reliable.
+
 
 ## Licensing
 
