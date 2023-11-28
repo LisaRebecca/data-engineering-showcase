@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine, BIGINT, FLOAT, TEXT
 
 DATA_URL = "https://download-data.deutschebahn.com/static/datasets/haltestellen/D_Bahnhof_2020_alle.CSV"
-DB_FILENAME = "data/trainstops.sqlite"
+DB_FILENAME = "trainstops.sqlite"
 DB_TABLENAME = "trainstops"
 
 
