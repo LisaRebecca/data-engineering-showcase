@@ -19,8 +19,8 @@ valid_verkehr = ["FV", "RV", "nur DPN"]
 df_trainstops = df_trainstops[df_trainstops['Verkehr'].isin(valid_verkehr)]
 
 # Valid "Laenge", "Breite" values are geographic coordinate system values between and including -90 and 90
-df_trainstops = df_trainstops[df_trainstops['Laenge'].between(-90, 90)]
-df_trainstops = df_trainstops[df_trainstops['Breite'].between(-90, 90)]
+df_trainstops = df_trainstops[df_trainstops['Laenge'].between(-90, 90, inclusive='both')]
+df_trainstops = df_trainstops[df_trainstops['Breite'].between(-90, 90, inclusive='both')]
 
 # Empty cells are considered invalid
 df_trainstops = df_trainstops[df_trainstops.notnull().all(axis=1)]
