@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, BIGINT, FLOAT, TEXT
 
 DATA_URL = "https://download-data.deutschebahn.com/static/datasets/haltestellen/D_Bahnhof_2020_alle.CSV"
 DB_FILENAME = "data/trainstops.sqlite"
@@ -31,8 +31,19 @@ df_trainstops = df_trainstops[df_trainstops['IFOPT'].str.match(r'^[a-zA-Z]{2}:\d
 print(len(df_trainstops))
 
 # Use fitting SQLite types (e.g., BIGINT, TEXT or FLOAT) for all columns
+types = {
+        "EVA_NR": BIGINT,
+        "DS100": TEXT,
+        "IFOPT": TEXT,
+        "NAME": TEXT,
+        "Verkehr": TEXT,
+        "Laenge": FLOAT,
+        "Breite": FLOAT,
+        "Betreiber_Name": TEXT,
+        "Betreiber_Nr": BIGINT
+    }
 
 engine = create_engine("sqlite:///"+DB_FILENAME)
-df_trainstops.to_sql(DB_TABLENAME, engine, if_exists="replace", index=True)
+df_trainstops.to_sql(DB_TABLENAME, engine, if_exists="replace", index=False, dtype=types)
 engine.dispose()
 
