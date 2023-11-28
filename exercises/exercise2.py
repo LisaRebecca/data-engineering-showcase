@@ -5,6 +5,7 @@ DATA_URL = "https://download-data.deutschebahn.com/static/datasets/haltestellen/
 DB_FILENAME = "data/trainstops.sqlite"
 DB_TABLENAME = "trainstops"
 
+
 def load_data(url: str) -> pd.DataFrame:
     return pd.read_csv(DATA_URL, sep=";", decimal=",")
 
