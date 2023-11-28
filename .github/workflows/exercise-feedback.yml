@@ -3,7 +3,7 @@ name: Exercise Feedback
 on:
   push:
     branches:
-    - '**'
+    - main
     paths:
     - exercises/**
 
@@ -14,7 +14,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
       with:
-        ref: ${{ github.ref }}
+        path: main
 
     - name: Checkout exercise feedback
       uses: actions/checkout@v3
