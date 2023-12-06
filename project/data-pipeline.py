@@ -20,9 +20,6 @@ from urllib.request import urlretrieve
 import bz2
 
 
-
-
-
 def download_file(URL: str, output_file: str) -> None:
     urlretrieve(URL, output_file)
     return output_file
@@ -95,7 +92,7 @@ def multiply_stringlists(first: list, second: list) -> list:
 
 def load_df_to_sqlite(df: pd.DataFrame, db_location: str, table_name: str):
     engine = sqlite3.connect(db_location)
-    df.to_sql(table_name, con=engine, index=True, if_exists='replace')
+    df.to_sql(table_name, con=engine, index=False, if_exists='replace')
 
 
 # DATA SOURCE 1:
@@ -106,13 +103,13 @@ filename = "city_connections.ttl.bz2"
 archive_file_path = download_file(DATA_URL, filename)
 
 graph_file_path = unpack_bz2_archive(archive_file_path)
-IRI2Label = extract_labels_from_graph(graph_file_path)
 
 triples = get_triple_list(graph_file_path)
 df_connections = extract_trips_from_graph(triples)
 
 df_connections = df_connections.rename(columns=column_names)
 
+IRI2Label = extract_labels_from_graph(graph_file_path)
 df_connections = replace_from_dict(df_connections, "iri_start", IRI2Label)
 df_connections = replace_from_dict(df_connections, "iri_end", IRI2Label)
 df_connections = replace_from_dict(df_connections, "transport_type", transport_types)
@@ -127,7 +124,11 @@ load_df_to_sqlite(df_connections, './data/connections.sqlite', 'connections')
 DATA_URL = "https://data.bundesnetzagentur.de/Bundesnetzagentur/SharedDocs/Downloads/DE/Sachgebiete/Energie/Unternehmen_Institutionen/E_Mobilitaet/ladesaeulenregister.csv"
 
 df_charging_points = pd.read_csv(DATA_URL, encoding='latin-1', sep=";", skiprows=10)
+
+df_charging_points.reset_index(drop=True)
+
 df_charging_points.to_pickle("data/charging_points.pkl")
+
 load_df_to_sqlite(df_charging_points, './data/ev_chargin_points_germany.sqlite', 'ev_chargin_points_germany')
 
 
