@@ -9,6 +9,8 @@ The output of the script should be:
     - datasets in your /data directory (e.g., as SQLite databases) 
 
 """
+from graph_predicates import connected_to, has_trip, duration, transport_type, route
+
 import pandas as pd
 import sqlite3
 import pyoxigraph as graph
@@ -17,29 +19,36 @@ import itertools
 from urllib.request import urlretrieve
 import bz2
 
+
+
 # DATA SOURCE 1:
+
+def download_file(URL: str, output_file: str) -> None:
+    urlretrieve(URL, output_file)
+    return output_file
+
+def unpack_bz2_archive(input_file) -> str :
+    zipfile = bz2.BZ2File(input_file)
+    data = zipfile.read()
+    output_file = filename[:-4]
+    open(output_file, 'wb').write(data)
+    return output_file
 
 url = ("https://mobilithek.info/mdp-api/files/aux/573356838940979200/moin-2022-05-02.1-20220502.131229-1.ttl.bz2")
 filename = "city_connections.ttl.bz2"
-urlretrieve(url, filename)
 
-zipfile = bz2.BZ2File(filename)
-data = zipfile.read()
-newfilepath = filename[:-4]
-open(newfilepath, 'wb').write(data)
+archive_file_path = download_file(url, filename)
+graph_file_path = unpack_bz2_archive("city_connections.ttl.bz2")
 
-l = list(graph.parse(newfilepath, "text/turtle", base_iri="http://example.com/"))
+l = list(graph.parse(graph_file_path, "text/turtle", base_iri="http://example.com/"))
 store = Store()
-store.load(newfilepath, mime_type="text/turtle")
-
-connected_to = graph.NamedNode("http://moin-project.org/ontology/connectedTo")
-has_trip = graph.NamedNode("http://moin-project.org/ontology/hasTrip")
-
+store.load(graph_file_path, mime_type="text/turtle")
+# 5daf87c7875c4b2a11f35688a6b99
 connections = {}
 for triple in l:
     try:
         subject, predicate, object = triple.subject, triple.predicate, triple.object
-        if predicate == has_trip: #subject.predicate == connected_to and 
+        if predicate == has_trip:
             trip_from = subject.subject
             trip_to = subject.object
             trip_id = triple.object
@@ -50,9 +59,6 @@ for triple in l:
     except AttributeError:
         print("Error with triple: ", triple)
 
-duration = graph.NamedNode("http://moin-project.org/ontology/duration")
-transport_type = graph.NamedNode("http://moin-project.org/ontology/transportType")
-route = graph.NamedNode("http://moin-project.org/ontology/route")
 
 for triple in l:
     try:
@@ -69,6 +75,7 @@ for triple in l:
 
 df_connections = pd.DataFrame(connections).T
 print(df_connections.head())
+
 
 PREDICATE_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"
 IRI2Label = {}
@@ -90,7 +97,6 @@ def replace_transport_iri_with_label(transport_type_iri):
         return "flight"
 
 df_connections["iri_start"] = df_connections["iri_start"].apply(replace_with_label)
-print(df_connections.head())
 df_connections["iri_end"] = df_connections["iri_end"].apply(replace_with_label)
 df_connections["http://moin-project.org/ontology/transportType"] = df_connections["http://moin-project.org/ontology/transportType"].apply(replace_transport_iri_with_label)
 
@@ -100,10 +106,14 @@ df_connections = df_connections.rename(columns={
     "http://moin-project.org/ontology/transportType" : "transport_type",
     })
 
-engine = sqlite3.connect('./data/connections.sqlite')
-print(df_connections.head())
-df_connections.to_sql('connections', con=engine, index=True, if_exists='replace')
+df_connections.to_pickle("data/connections.pkl")
 
+def load_df_to_sqlite(db_location, table_name):
+    engine = sqlite3.connect('./data/connections.sqlite')
+    
+    df_connections.to_sql('connections', con=engine, index=True, if_exists='replace')
+
+load_df_to_sqlite("","")
 
 # DATA SOURCE 2:
 
