@@ -9,6 +9,8 @@ The output of the script should be:
     - datasets in your /data directory (e.g., as SQLite databases) 
 
 """
+from graph_predicates import connected_to, has_trip, duration, transport_type, route, column_names, transport_types
+
 import pandas as pd
 import sqlite3
 import pyoxigraph as graph
@@ -17,92 +19,104 @@ import itertools
 from urllib.request import urlretrieve
 import bz2
 
+
+def download_file(URL: str, output_file: str) -> None:
+    urlretrieve(URL, output_file)
+    return output_file
+
+def unpack_bz2_archive(input_file) -> str :
+    zipfile = bz2.BZ2File(input_file)
+    data = zipfile.read()
+    output_file = filename[:-4]
+    open(output_file, 'wb').write(data)
+    return output_file
+
+def get_triple_list(graph_file_path: str) -> list:
+    return list(graph.parse(graph_file_path, "text/turtle", base_iri="http://example.com/"))
+
+def extract_trips_from_graph(triples: list)-> pd.DataFrame:
+    connections = {}
+    for triple in triples:
+        try:
+            # triple represents a trip between two cities
+            if triple.predicate == has_trip: 
+                
+                trip_from = triple.subject.subject.value
+                trip_to = triple.subject.object.value
+                trip_id = triple.object.value
+                
+                connections[trip_id] = {
+                    "iri_start": str(trip_from),
+                    "iri_end": str(trip_to),
+                }
+            
+            # triple represents properties of a specific trip
+            if triple.predicate in [duration, transport_type, route]: 
+                
+                trip_id = triple.subject.value
+                pred_name = triple.predicate.value
+                pred_value = triple.object.value
+                
+                connections[trip_id][str(pred_name)] = str(pred_value)
+
+        except AttributeError:
+            print("Error with triple: ", triple)
+
+    return pd.DataFrame(connections).T.reset_index(drop=True)
+
+def extract_labels_from_graph(graph_path: str, label_iri="http://www.w3.org/2000/01/rdf-schema#label") -> dict:
+    store = Store()
+    store.load(graph_path, mime_type="text/turtle")
+    
+    result = store.query("SELECT ?subject ?object WHERE { ?subject <"+label_iri+"> ?object}")
+    IRI2Label = {}
+    for r in result:
+        IRI2Label[str(r["subject"].value)] = r["object"].value
+    return IRI2Label
+
+def replace_from_dict(data: pd.DataFrame, column_name: str, map: dict) -> pd.DataFrame:
+    def f(key):
+        if key in list(map.keys()):
+            return map[key]
+        
+    data[column_name] = data[column_name].apply(f)
+    return data
+
+def create_timestamps(days: list, months: list, years: list) -> list:
+    timestamps = ['-'.join(tuple) for tuple in list(itertools.product(years, months))]
+    timestamps = ['-'.join(tuple) for tuple in list(itertools.product(timestamps, days))]
+    return timestamps
+
+def multiply_stringlists(first: list, second: list) -> list:
+    return ['-'.join(tuple) for tuple in list(itertools.product(first, second))]
+
+def load_df_to_sqlite(df: pd.DataFrame, db_location: str, table_name: str):
+    engine = sqlite3.connect(db_location)
+    df.to_sql(table_name, con=engine, index=False, if_exists='replace')
+
+
 # DATA SOURCE 1:
 
-url = ("https://mobilithek.info/mdp-api/files/aux/573356838940979200/moin-2022-05-02.1-20220502.131229-1.ttl.bz2")
+DATA_URL = ("https://mobilithek.info/mdp-api/files/aux/573356838940979200/moin-2022-05-02.1-20220502.131229-1.ttl.bz2")
 filename = "city_connections.ttl.bz2"
-urlretrieve(url, filename)
 
-zipfile = bz2.BZ2File(filename)
-data = zipfile.read()
-newfilepath = filename[:-4]
-open(newfilepath, 'wb').write(data)
+archive_file_path = download_file(DATA_URL, filename)
 
-l = list(graph.parse(newfilepath, "text/turtle", base_iri="http://example.com/"))
-store = Store()
-store.load(newfilepath, mime_type="text/turtle")
+graph_file_path = unpack_bz2_archive(archive_file_path)
 
-connected_to = graph.NamedNode("http://moin-project.org/ontology/connectedTo")
-has_trip = graph.NamedNode("http://moin-project.org/ontology/hasTrip")
+triples = get_triple_list(graph_file_path)
+df_connections = extract_trips_from_graph(triples)
 
-connections = {}
-for triple in l:
-    try:
-        subject, predicate, object = triple.subject, triple.predicate, triple.object
-        if predicate == has_trip: #subject.predicate == connected_to and 
-            trip_from = subject.subject
-            trip_to = subject.object
-            trip_id = triple.object
-            connections[trip_id.value] = {
-                "iri_start": str(trip_from.value),
-                "iri_end": str(trip_to.value),
-            }
-    except AttributeError:
-        print("Error with triple: ", triple)
+df_connections = df_connections.rename(columns=column_names)
 
-duration = graph.NamedNode("http://moin-project.org/ontology/duration")
-transport_type = graph.NamedNode("http://moin-project.org/ontology/transportType")
-route = graph.NamedNode("http://moin-project.org/ontology/route")
+IRI2Label = extract_labels_from_graph(graph_file_path)
+df_connections = replace_from_dict(df_connections, "iri_start", IRI2Label)
+df_connections = replace_from_dict(df_connections, "iri_end", IRI2Label)
+df_connections = replace_from_dict(df_connections, "transport_type", transport_types)
 
-for triple in l:
-    try:
-        subject, predicate, object = triple.subject, triple.predicate, triple.object
-        pred_name = None
-        pred_value = None
-        if predicate in [duration, transport_type, route]:
-            trip_id = triple.subject.value
-            pred_name = triple.predicate.value
-            pred_value = triple.object.value
-            connections[trip_id][str(pred_name)] = str(pred_value)
-    except AttributeError:
-        print("Error with triple: ", triple)
+df_connections.to_pickle("data/connections.pkl")
 
-df_connections = pd.DataFrame(connections).T
-print(df_connections.head())
-
-PREDICATE_LABEL = "http://www.w3.org/2000/01/rdf-schema#label"
-IRI2Label = {}
-result = store.query("SELECT ?subject ?object WHERE { ?subject <"+PREDICATE_LABEL+"> ?object}")
-
-for r in result:
-    IRI2Label[str(r["subject"].value)] = r["object"].value
-
-def replace_with_label(iri):
-    if iri in list(IRI2Label.keys()):
-        return IRI2Label[iri]
-    
-def replace_transport_iri_with_label(transport_type_iri):
-    if transport_type_iri == "http://moin-project.org/ontology/train":
-        return "train"
-    if transport_type_iri == "http://moin-project.org/ontology/car":
-        return "car"
-    if transport_type_iri == "http://moin-project.org/ontology/flight":
-        return "flight"
-
-df_connections["iri_start"] = df_connections["iri_start"].apply(replace_with_label)
-print(df_connections.head())
-df_connections["iri_end"] = df_connections["iri_end"].apply(replace_with_label)
-df_connections["http://moin-project.org/ontology/transportType"] = df_connections["http://moin-project.org/ontology/transportType"].apply(replace_transport_iri_with_label)
-
-df_connections = df_connections.rename(columns={
-    "http://moin-project.org/ontology/route": "route",
-    "http://moin-project.org/ontology/duration": "duration",
-    "http://moin-project.org/ontology/transportType" : "transport_type",
-    })
-
-engine = sqlite3.connect('./data/connections.sqlite')
-print(df_connections.head())
-df_connections.to_sql('connections', con=engine, index=True, if_exists='replace')
+load_df_to_sqlite(df_connections, './data/connections.sqlite', 'connections')
 
 
 # DATA SOURCE 2:
@@ -111,25 +125,29 @@ DATA_URL = "https://data.bundesnetzagentur.de/Bundesnetzagentur/SharedDocs/Downl
 
 df_charging_points = pd.read_csv(DATA_URL, encoding='latin-1', sep=";", skiprows=10)
 
-engine = sqlite3.connect('./data/ev_chargin_points_germany.sqlite')
+df_charging_points.reset_index(drop=True)
 
-df_charging_points.to_sql('ev_chargin_points_germany', con=engine, index=False, if_exists='replace')
+df_charging_points.to_pickle("data/charging_points.pkl")
+
+load_df_to_sqlite(df_charging_points, './data/ev_chargin_points_germany.sqlite', 'ev_chargin_points_germany')
 
 
 # DATA SOURCE 3:
+
 URL = "https://www.bundesnetzagentur.de/SharedDocs/Downloads/DE/Sachgebiete/Energie/Unternehmen_Institutionen/E_Mobilitaet/Ladesaeuleninfrastruktur.xlsx?__blob=publicationFile&v=28"
 
-measuring_dates = ["01-Jan-", "01-Apr-", "01-Jul-", "01-Oct-"]
-dates = [ date+str(year) for year in range(2017, 2024) for date in measuring_dates ]
+df_districts = pd.read_excel(URL, sheet_name="4.3 Ladepunkte je Kreis", skiprows=7, usecols="E:CI")
+
+timestamps = create_timestamps(["1"],["Jan", "Apr", "Jul", "Oct"], ["2017", "2018", "2019", "2020", "2021", "2022", "2023"])
 station_types = ["normal", "fast", "total"]
 
-dates_and_types = ['-'.join(tuple) for tuple in list(itertools.product(dates, station_types))]
-dates_and_types = dates_and_types[:-3]
+measurements = multiply_stringlists(timestamps, station_types)
+measurements = measurements[:-3]
 
-columns = ["location", "state"] + dates_and_types
+df_districts.columns = ["location", "state"] + measurements
 
-df_districts = pd.read_excel(URL, sheet_name="4.3 Ladepunkte je Kreis", skiprows=7, usecols="E:CI")
-df_districts.columns = columns
-df_districts = df_districts.drop(index=(len(df_districts)-1)) # drop last row
-engine = sqlite3.connect('./data/ev_chargin_points_per_district.sqlite')
-df_districts.to_sql('ev_chargin_points_per_district', con=engine, index=False, if_exists='replace')
+df_districts = df_districts.drop(index=(len(df_districts)-1)) # drop last row, it only contains the sums
+
+df_districts.to_pickle("data/districts.pkl")
+
+load_df_to_sqlite(df_districts, './data/ev_chargin_points_per_district.sqlite', 'ev_chargin_points_per_district')
