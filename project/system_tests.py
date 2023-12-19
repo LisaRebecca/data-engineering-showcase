@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture
 def connection_df():
-    cnx = sqlite3.connect('/Users/lisaschmidt/Documents/GitHub/data-engineering-showcase/data/connections.sqlite')
+    cnx = sqlite3.connect('data/connections.sqlite')
     df = pd.read_sql_query("SELECT * FROM connections", cnx)
     cnx.close()
     return df
