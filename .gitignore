@@ -1,3 +1,9 @@
 .DS_Store
-/data/*
+*GER_shape*
 !/data/.gitkeep
+.idea*
+*.sqlite
+*.ttl*
+*.pkl
+*pyc
+src.egg-info/*
