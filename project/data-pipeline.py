@@ -151,6 +151,9 @@ df_charging_points = df_charging_points[df_charging_points.columns.intersection(
 
 df_charging_points["longitude"] = df_charging_points["longitude"].apply(lambda x: float(str(x).replace(",",".")))
 df_charging_points["latitude"] = df_charging_points["latitude"].apply(lambda x: float(str(x).replace(",",".")))
+df_charging_points["rated_capacity"] = df_charging_points["rated_capacity"].apply(lambda x: float(str(x).replace(",",".")))
+
+df_charging_points = df_charging_points.dropna(how="all")
 
 df_charging_points.to_pickle("data/chargers.pkl")
 
