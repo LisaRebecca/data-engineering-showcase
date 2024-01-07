@@ -70,3 +70,33 @@ def process_route(route, chargers_gdf):
 
 def project_to_meters(geodataframe, to=32632):
     return geodataframe.set_crs(epsg=4326).to_crs(epsg=to)
+
+def compute_connectivity_metrics(df_chargers, df_connectivity):
+    import geopandas as gpd
+    from shapely.geometry import Point
+    from shapely.wkt import loads
+
+    # Convert to GeoDataFrames
+    df_chargers['geometry'] = df_chargers.apply(lambda row: Point(float(row.longitude), float(row.latitude)), axis=1)
+    gdf_chargers = gpd.GeoDataFrame(df_chargers, geometry='geometry')
+    df_connectivity['geometry'] = df_connectivity['route'].apply(lambda x: loads(x))
+    gdf_connectivity = gpd.GeoDataFrame(df_connectivity, geometry='geometry')
+
+    # project to a coordinate system that uses meters 
+    gdf_chargers = project_to_meters(gdf_chargers)
+    gdf_connectivity = project_to_meters(gdf_connectivity)
+
+    from joblib import Parallel, delayed
+    from multiprocessing import cpu_count
+    from tqdm import tqdm
+
+    routes_list = [route for _, route in gdf_connectivity.iterrows()]
+    results = Parallel(n_jobs=cpu_count())(delayed(process_route)(route, gdf_chargers) for route in tqdm(routes_list))
+
+    densities, distances = zip(*results)
+
+    df_connectivity['charger_density'] = densities
+    df_connectivity['avg_dist_charger'] = distances
+    df_connectivity[:5]
+
+    return densities, distances
