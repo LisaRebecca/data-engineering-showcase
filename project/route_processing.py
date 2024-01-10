@@ -22,7 +22,7 @@ def calculate_relative_deviation(row, column1='duration_car', column2='duration_
     absolute_deviation = b - a
     return absolute_deviation / a * 100
 
-def calculate_density(route, chargers_gdf, buffer_distance=5000):
+def calculate_density(route, chargers_gdf, buffer_distance=500):
 
     buffer = route.geometry.buffer(buffer_distance)
     chargers_in_buffer = chargers_gdf.within(buffer)
@@ -33,8 +33,7 @@ def calculate_density(route, chargers_gdf, buffer_distance=5000):
 
 from shapely.ops import nearest_points
 import numpy as np
-def calculate_nearest_distances(route, chargers_gdf, num_points_per_km=0.1):
-    num_points = 10#int(route.geometry.length * 1000 * num_points_per_km)
+def calculate_nearest_distances(route, chargers_gdf, num_points=100):
 
     points = [route.geometry.interpolate(i/num_points, normalized=True) for i in range(num_points + 1)]
     
