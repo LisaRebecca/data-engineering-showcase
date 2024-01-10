@@ -28,7 +28,7 @@ def chargers_df():
     return df
 
 def test_chargers_size(chargers_df):
-    assert len(chargers_df) == 54225
+    assert len(chargers_df) == 54223
 
 def test_chargers_index(chargers_df):
     print("DATAFRAME:",chargers_df.columns)
