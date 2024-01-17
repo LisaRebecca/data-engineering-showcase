@@ -22,4 +22,4 @@ The project recommends adding charging stations to the route, which is less cost
 
 [Slides](https://github.com/LisaRebecca/data-engineering-showcase/blob/main/project/slides.pdf)
 
-[Presentation](https://github.com/LisaRebecca/data-engineering-showcase/blob/main/project/presentation-video.mp4)
+[Presentation](https://github.com/LisaRebecca/data-engineering-showcase/blob/main/project/presentation-video.md)
