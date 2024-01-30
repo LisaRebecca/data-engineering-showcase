@@ -1,3 +1,21 @@
+valuetype coordinate oftype decimal {
+    constraints: [range_coordinate];
+}
+
+constraint range_coordinate oftype RangeConstraint {
+    lowerBound:-90;
+    upperBound: 90;
+}
+
+valuetype zone oftype integer {
+    constraints: [zone2001];
+}
+
+constraint zone2001 oftype RangeConstraint{
+    lowerBound: 2001;
+    upperBound: 2001;
+}
+
 pipeline Pipeline {
 
     data_extractor
@@ -35,6 +53,9 @@ pipeline Pipeline {
         columns: [
             "stop_id" oftype integer,
             "stop_name" oftype text,
+            "stop_lat" oftype coordinate ,
+            "stop_lon" oftype coordinate,
+            "zone_id" oftype zone,
         ];
     }
 
